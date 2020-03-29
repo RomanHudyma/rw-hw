@@ -1,7 +1,10 @@
 import React from "react";
-import { moviesData } from "../moviesData";
-import MovieItem from "./MovieItem";
 
+import MovieItem from "./MovieItem";
+import MovieTabs from "./MovieTabs";
+import Pagination from "./Pagination";
+
+import {API_URL, API_KEY_3} from '../utils/api';
 // UI = fn(state, props)
 
 // App = new React.Component()
@@ -11,15 +14,37 @@ class App extends React.Component {
     super();
 
     this.state = {
-      movies: moviesData,
-      moviesWillWatch: []
+      movies: [],
+      moviesWillWatch: [],
+      sort_by: 'popularity.desc',
+      total_pages: 1,
+      page: 1
     };
   }
 
+  getMovies = () => {
+    fetch(`${API_URL}/discover/movie?api_key=${API_KEY_3}&sort_by=${this.state.sort_by}&page=${this.state.page}`).then( response => {
+      return response.json();
+    }).then(data => {
+      this.setState({
+        movies: data.results,
+        total_pages: data.total_pages,
+      });
+    });
+  }
+
+  componentDidUpdate (prevProps, prevState) {
+    if (prevState.sort_by !== this.state.sort_by || prevState.page !== this.state.page) {
+      this.getMovies();
+    }
+  }
+
+  componentDidMount () {
+    this.getMovies();
+  }
+
   deleteMovie = movie => {
-    console.log(movie.id);
     const updateMovies = this.state.movies.filter(item => item.id !== movie.id);
-    console.log(updateMovies);
 
     // this.state.movies = updateMovies;
     this.setState({
@@ -46,12 +71,28 @@ class App extends React.Component {
     });
   };
 
+  updateSortBy = sort_by => {
+    this.setState({
+      sort_by: sort_by
+    });
+  };
+
+  switchPage = page => {
+    this.setState({
+      page: page
+    });
+  };
+
   render() {
-    console.log("render", this);
     return (
       <div className="container">
         <div className="row mt-4">
           <div className="col-9">
+            <div className="row mb-5">
+              <div className="col-12">
+                <MovieTabs sort_by={this.state.sort_by} updateSortBy={this.updateSortBy}/>
+              </div>
+            </div>
             <div className="row">
               {this.state.movies.map(movie => {
                 return (
@@ -79,6 +120,11 @@ class App extends React.Component {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-12">
+            <Pagination page={this.state.page} total_pages={this.state.total_pages} switchPage={this.switchPage}/>
           </div>
         </div>
       </div>
